@@ -3,6 +3,8 @@ name = "tradfri"
 version = "0.0.0"
 authors = ["Edwin Svensson <tradfri@olback.net>"]
 edition = "2018"
+description = "IKEA Trådfri API"
+license = "MIT / Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
