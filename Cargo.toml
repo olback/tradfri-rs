@@ -9,3 +9,8 @@ license = "MIT / Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+coap = "0.8"
+# udp-dtls = "0.1"
+udp-dtls = { git = "https://github.com/TimonPost/udp-dtls.git", branch = "master", features = [ "vendored" ]}
+serde = { version = "1.0", features = [ "derive" ] }
+serde_json = "1.0"

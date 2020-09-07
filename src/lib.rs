@@ -1,7 +1,16 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+mod authenticator;
+mod connection;
+mod error;
+mod result;
+mod macros;
+mod device_worker;
+pub mod device;
+
+pub use {
+    coap, // Re-export coap
+    error::Error,
+    result::Result,
+    authenticator::TradfriAuthenticator,
+    connection::TradfriConnection,
+    device::Device
+};
