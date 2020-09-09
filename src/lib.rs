@@ -6,6 +6,8 @@ mod macros;
 mod device_worker;
 pub mod device;
 
+pub(crate) const BUF_SIZE: usize = 8192;
+
 pub use {
     coap, // Re-export coap
     error::Error,

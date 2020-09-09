@@ -1,6 +1,7 @@
 use {
-    std::{net::SocketAddr, io::Write},
-    crate::TradfriConnection
+    std::net::SocketAddr,
+    crate::TradfriConnection,
+    coap::CoAPRequest
 };
 
 #[derive(Debug, Clone)]
@@ -18,13 +19,12 @@ impl DeviceWorker {
         }
     }
 
-    pub fn send(&self, data: &[u8]) -> crate::Result<usize> {
+    pub fn send(&self, req: CoAPRequest) -> crate::Result<usize> {
 
         let mut con = TradfriConnection::connect(self.addr, &self.pre_shared_secret)?;
-        let len = con.write(data)?;
+        let len = con.send(req)?;
         Ok(len)
 
     }
-
 
 }

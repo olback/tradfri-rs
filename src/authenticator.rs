@@ -2,8 +2,7 @@ use {
     crate::TradfriConnection,
     serde::Deserialize,
     std::{
-        net::SocketAddr,
-        io::{Read, Write}
+        net::SocketAddr
     },
     coap::{CoAPRequest, message::request::Method}
 };
@@ -31,12 +30,10 @@ impl TradfriAuthenticator {
         req.set_method(Method::Post);
         req.message.set_payload(BODY.as_bytes().to_owned());
 
-        let data = req.message.to_bytes()?;
-        con.write(&data)?;
+        con.send(req)?;
 
-        let mut buf = [0u8; 1024];
-        let len = con.read(&mut buf)?;
-        let content: AuthResponse = serde_json::from_reader(&buf[0..len])?;
+        let response = con.receive()?;
+        let content: AuthResponse = serde_json::from_slice(&response.message.payload)?;
 
         Ok(content.pre_shared_key)
 

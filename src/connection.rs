@@ -1,11 +1,14 @@
 use {
-    crate::{Device, device_worker::DeviceWorker},
+    crate::{Device, device_worker::DeviceWorker, Error},
     std::{
         net::{UdpSocket, SocketAddr},
         io::{self, Read, Write}
     },
     udp_dtls::{DtlsConnector, DtlsStream, UdpChannel, ConnectorIdentity, PskIdentity},
-    coap::{CoAPRequest, message::{packet::Packet, request::Method}}
+    coap::{
+        CoAPRequest, IsMessage,
+        message::{packet::{Packet, ObserveOption}, request::Method, response::{CoAPResponse, Status}}
+    }
 };
 
 #[derive(Debug)]
@@ -62,12 +65,9 @@ impl TradfriConnection {
         let data = req.message.to_bytes()?;
         self.write(&data[..])?;
 
-        let mut buf = [0u8; 4096];
-        let len = self.read(&mut buf)?;
+        let response = self.receive()?;
 
-        let packet = Packet::from_bytes(&buf[0..len])?;
-
-        let device_ids: Vec<u32> = serde_json::from_slice(&packet.payload)?;
+        let device_ids: Vec<u32> = serde_json::from_slice(&response.message.payload)?;
         let mut devices = Vec::<Device>::with_capacity(device_ids.len());
 
         for device_id in device_ids {
@@ -76,15 +76,11 @@ impl TradfriConnection {
             req.set_path(&format!("15001/{}", device_id));
             req.set_method(Method::Get);
 
-            let data = req.message.to_bytes()?;
-            self.write(&data[..])?;
+            self.send(req)?;
 
-            let mut buf = [0u8; 4096];
-            let len = self.read(&mut buf)?;
+            let response = self.receive()?;
 
-            let packet = Packet::from_bytes(&buf[0..len])?;
-
-            match Device::new(self.worker(), &packet.payload) {
+            match Device::new(self.worker(), &response.message.payload) {
                 Ok(device) => devices.push(device),
                 Err(e) => eprintln!("{:?}", e)
             };
@@ -95,10 +91,54 @@ impl TradfriConnection {
 
     }
 
+    pub fn observe<F>(&mut self, resource_path: &str, cb: F) -> crate::Result<()>
+        where F: Fn(Packet) {
+
+        // Mostly stolen from the coap crate
+
+        let mut message_id = 0u16;
+        let mut req = CoAPRequest::new();
+        req.set_path(resource_path);
+        req.set_observe(vec![ObserveOption::Register as u8]);
+        req.set_message_id(Self::gen_message_id(&mut message_id));
+
+        self.write(&req.message.to_bytes()?)?;
+
+        let response = self.receive()?;
+        if *response.get_status() != Status::Content {
+            return Err(Error::new("Resource not found"))
+        }
+
+        loop {
+            let res = self.receive()?;
+            cb(res.message);
+        }
+
+    }
+
+    pub fn send(&mut self, req: CoAPRequest) -> crate::Result<usize> {
+        Ok(self.write(&req.message.to_bytes()?)?)
+    }
+
+    pub fn receive(&mut self) -> crate::Result<CoAPResponse> {
+
+        let mut buf = [0u8; crate::BUF_SIZE];
+        let len = self.read(&mut buf)?;
+        let packet = Packet::from_bytes(&buf[0..len])?;
+
+        Ok(CoAPResponse {
+            message: packet
+        })
+
+    }
+
+    fn gen_message_id(message_id: &mut u16) -> u16 {
+        (*message_id) += 1;
+        return *message_id;
+    }
+
     fn worker(&self) -> DeviceWorker {
-
         DeviceWorker::new(self.addr, self.pre_shared_key.clone())
-
     }
 
 }

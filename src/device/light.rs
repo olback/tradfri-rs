@@ -61,9 +61,7 @@ impl Light {
         req.set_path(&format!("15001/{}", self.id));
         req.set_method(Method::Put);
         req.message.set_payload(BODY_ON.as_bytes().to_vec());
-
-        let data = req.message.to_bytes()?;
-        self._worker.send(&data)?;
+        self._worker.send(req)?;
 
         Ok(())
 
@@ -75,9 +73,7 @@ impl Light {
         req.set_path(&format!("15001/{}", self.id));
         req.set_method(Method::Put);
         req.message.set_payload(BODY_OFF.as_bytes().to_vec());
-
-        let data = req.message.to_bytes()?;
-        self._worker.send(&data)?;
+        self._worker.send(req)?;
 
         Ok(())
 
@@ -89,9 +85,7 @@ impl Light {
         req.set_path(&format!("15001/{}", self.id));
         req.set_method(Method::Put);
         req.message.set_payload(format!("{{ \"3311\": [{{ \"5851\": {} }}] }}", level).as_bytes().to_vec());
-
-        let data = req.message.to_bytes()?;
-        self._worker.send(&data)?;
+        self._worker.send(req)?;
 
         Ok(())
 
