@@ -2,7 +2,8 @@ use {
     crate::{Device, device_worker::DeviceWorker, Error},
     std::{
         net::{UdpSocket, SocketAddr},
-        io::{self, Read, Write}
+        io::{self, Read, Write},
+        time::Duration
     },
     udp_dtls::{DtlsConnector, DtlsStream, UdpChannel, ConnectorIdentity, PskIdentity},
     coap::{
@@ -15,12 +16,19 @@ use {
 pub struct TradfriConnection {
     stream: DtlsStream<UdpChannel>,
     addr: SocketAddr,
+    key_name: String,
     pre_shared_key: String
 }
 
 impl TradfriConnection {
 
     pub(crate) fn new<A: Into<SocketAddr>>(addr: A, identity: &[u8], key: &[u8]) -> crate::Result<Self> {
+
+        Self::new_with_timeout(addr, identity, key, None)
+
+    }
+
+    pub(crate) fn new_with_timeout<A: Into<SocketAddr>>(addr: A, identity: &[u8], key: &[u8], timeout: Option<u64>) -> crate::Result<Self> {
 
         let connector = DtlsConnector::builder()
             .danger_accept_invalid_certs(true)
@@ -34,6 +42,10 @@ impl TradfriConnection {
 
         let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
         socket.set_nonblocking(false).unwrap();
+        if let Some(timeout) = timeout {
+            socket.set_read_timeout(Some(Duration::from_secs(timeout)))?;
+            socket.set_write_timeout(Some(Duration::from_secs(timeout)))?;
+        }
 
         let addr = addr.into();
 
@@ -45,14 +57,15 @@ impl TradfriConnection {
         Ok(Self {
             stream: connector.connect("", client_channel)?,
             addr: addr.into(),
+            key_name: String::from_utf8_lossy(identity).to_owned().to_string(),
             pre_shared_key: String::from_utf8_lossy(key).to_owned().to_string()
         })
 
     }
 
-    pub fn connect<A: Into<SocketAddr>>(addr: A, pre_shared_key: &str) -> crate::Result<Self> {
+    pub fn connect<A: Into<SocketAddr>>(addr: A, key_name: &str, pre_shared_key: &str) -> crate::Result<Self> {
 
-        Self::new(addr, b"IDENTITY", pre_shared_key.as_bytes())
+        Self::new(addr, key_name.as_bytes(), pre_shared_key.as_bytes())
 
     }
 
@@ -132,13 +145,19 @@ impl TradfriConnection {
 
     }
 
+    pub fn set_timeout(&mut self, secs: Option<u64>) -> crate::Result<()> {
+        self.stream.get_mut().socket.set_read_timeout(secs.map(|v| Duration::from_secs(v)))?;
+        self.stream.get_mut().socket.set_write_timeout(secs.map(|v| Duration::from_secs(v)))?;
+        Ok(())
+    }
+
     fn gen_message_id(message_id: &mut u16) -> u16 {
         (*message_id) += 1;
         return *message_id;
     }
 
     fn worker(&self) -> DeviceWorker {
-        DeviceWorker::new(self.addr, self.pre_shared_key.clone())
+        DeviceWorker::new(self.addr, self.key_name.clone(), self.pre_shared_key.clone())
     }
 
 }

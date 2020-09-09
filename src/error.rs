@@ -15,6 +15,14 @@ impl Error {
 
 }
 
+impl std::fmt::Display for Error {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.cause)
+    }
+
+}
+
 impl_from!(udp_dtls::Error);
 impl_from!(coap::message::packet::PackageError);
 impl_from!(coap::message::packet::ParseError);

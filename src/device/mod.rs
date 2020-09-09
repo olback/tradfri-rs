@@ -23,7 +23,7 @@ struct BasicDevice {
     pub device_type: u32
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Device {
     RemoteControl, // 0
     Light(light::Light), // 2
@@ -50,7 +50,12 @@ impl Device {
 
         match basic_device.device_type {
             0 => Ok(Self::RemoteControl),
+            // 1 => Ok(Self::...),
             2 => Ok(Self::Light(light::Light::new(worker, bytes)?)),
+            // 3 => Ok(Self::...),
+            // 4 => Ok(Self::...),
+            // 5 => Ok(Self::...),
+            // ...
             _ => Err(crate::Error::new("Unsupported device"))
         }
 

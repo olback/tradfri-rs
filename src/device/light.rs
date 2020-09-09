@@ -19,7 +19,7 @@ struct InternalLight {
     lights: Vec<LightState>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct LightState {
     #[serde(rename = "5850")]
     pub state: u8,
@@ -27,7 +27,7 @@ pub struct LightState {
     pub dimmer: u8
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Light {
     _worker: DeviceWorker,
     pub name: String,

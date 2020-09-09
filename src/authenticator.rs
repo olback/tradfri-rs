@@ -7,8 +7,6 @@ use {
     coap::{CoAPRequest, message::request::Method}
 };
 
-const BODY: &'static str = "{\"9090\": \"IDENTITY\"}";
-
 #[derive(Debug, Deserialize)]
 struct AuthResponse {
     #[serde(rename = "9091")]
@@ -21,14 +19,14 @@ pub struct TradfriAuthenticator;
 
 impl TradfriAuthenticator {
 
-    pub fn authenticate<A: Into<SocketAddr>>(addr: A, security_code: &str) -> crate::Result<String> {
+    pub fn authenticate<A: Into<SocketAddr>>(addr: A, key_name: &str, security_code: &str, timeout: u64) -> crate::Result<String> {
 
-        let mut con = TradfriConnection::new(addr, b"Client_identity", security_code.as_bytes())?;
+        let mut con = TradfriConnection::new_with_timeout(addr, b"Client_identity", security_code.as_bytes(), Some(timeout))?;
 
         let mut req = CoAPRequest::new();
         req.set_path("15011/9063");
         req.set_method(Method::Post);
-        req.message.set_payload(BODY.as_bytes().to_owned());
+        req.message.set_payload(format!("{{\"9090\": \"{}\"}}", key_name).as_bytes().to_owned());
 
         con.send(req)?;
 
