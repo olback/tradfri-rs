@@ -4,7 +4,7 @@ macro_rules! impl_from {
         impl From<$t> for crate::Error {
             fn from(err: $t) -> crate::Error {
                 crate::Error {
-                    cause: format!("{}", err)
+                    cause: format!("{}", err),
                 }
             }
         }
