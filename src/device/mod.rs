@@ -2,6 +2,7 @@
 
 use {crate::device_worker::DeviceWorker, serde::Deserialize};
 
+pub mod colournames;
 pub mod light;
 pub mod outlet;
 
