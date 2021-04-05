@@ -1,5 +1,5 @@
 use {
-    crate::device_worker::DeviceWorker,
+    crate::{device::colournames::ColourName, device_worker::DeviceWorker},
     coap::{message::request::Method, CoAPRequest},
     serde::Deserialize,
 };
@@ -25,6 +25,12 @@ pub struct LightState {
     pub state: u8,
     #[serde(rename = "5851")]
     pub dimmer: u8,
+    #[serde(rename = "5706", default)]
+    pub colour_name: ColourName,
+    #[serde(rename = "5709", default)]
+    pub colour_x: u32,
+    #[serde(rename = "5710", default)]
+    pub colour_y: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -79,6 +85,38 @@ impl Light {
         req.set_method(Method::Put);
         req.message.set_payload(
             format!("{{ \"3311\": [{{ \"5851\": {} }}] }}", level)
+                .as_bytes()
+                .to_vec(),
+        );
+        self._worker.send(req)?;
+
+        Ok(())
+    }
+
+    //NOTE uses colourname instead of string as unknown hexcodes default to "Glow"
+    pub fn colour(&self, colour: ColourName) -> crate::Result<()> {
+        let mut req = CoAPRequest::new();
+        req.set_path(&format!("15001/{}", self.id));
+        req.set_method(Method::Put);
+        req.message.set_payload(
+            format!(
+                "{{ \"3311\": [{{ \"5706\": \"{}\" }}] }}",
+                serde_json::to_string(&colour)?
+            )
+            .as_bytes()
+            .to_vec(),
+        );
+        self._worker.send(req)?;
+
+        Ok(())
+    }
+
+    pub fn colour_xy(&self, x: u32, y: u32) -> crate::Result<()> {
+        let mut req = CoAPRequest::new();
+        req.set_path(&format!("15001/{}", self.id));
+        req.set_method(Method::Put);
+        req.message.set_payload(
+            format!("{{ \"3311\": [{{ \"5709\": {}, \"5710\": {} }}] }}", x, y)
                 .as_bytes()
                 .to_vec(),
         );
