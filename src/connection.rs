@@ -27,15 +27,11 @@ pub struct TradfriConnection {
 }
 
 impl TradfriConnection {
-    pub(crate) fn new<A: Into<IpAddr>>(
-        addr: A,
-        identity: &[u8],
-        key: &[u8],
-    ) -> crate::Result<Self> {
+    pub fn new<A: Into<IpAddr>>(addr: A, identity: &[u8], key: &[u8]) -> crate::Result<Self> {
         Self::new_with_timeout(addr, identity, key, None)
     }
 
-    pub(crate) fn new_with_timeout<A: Into<IpAddr>>(
+    pub fn new_with_timeout<A: Into<IpAddr>>(
         addr: A,
         identity: &[u8],
         key: &[u8],
@@ -70,14 +66,6 @@ impl TradfriConnection {
             key_name: String::from_utf8_lossy(identity).to_owned().to_string(),
             pre_shared_key: String::from_utf8_lossy(key).to_owned().to_string(),
         })
-    }
-
-    pub fn connect<A: Into<IpAddr>>(
-        addr: A,
-        key_name: &str,
-        pre_shared_key: &str,
-    ) -> crate::Result<Self> {
-        Self::new(addr, key_name.as_bytes(), pre_shared_key.as_bytes())
     }
 
     pub fn devices(&mut self) -> crate::Result<Vec<Device>> {

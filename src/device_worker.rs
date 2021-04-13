@@ -21,8 +21,11 @@ impl DeviceWorker {
     }
 
     pub fn send(&self, req: CoAPRequest) -> crate::Result<usize> {
-        let mut con =
-            TradfriConnection::connect(self.addr, &self.key_name, &self.pre_shared_secret)?;
+        let mut con = TradfriConnection::new(
+            self.addr,
+            self.key_name.as_bytes(),
+            self.pre_shared_secret.as_bytes(),
+        )?;
         let len = con.send(req)?;
         Ok(len)
     }
